@@ -21,7 +21,9 @@ config.readfp(open("pysync.cfg"))
 
 save_path = config.get("server", "dir")
 os_type = config.get("server", "os")
+remote_os_type = config.get("client", "os")
 path_delimeter = "/"
+remote_path_delimeter = "/"
 
 mkdir_cmd = "mkdir -p "
 if os_type == "win":
@@ -33,6 +35,8 @@ if os.access(save_path, os.F_OK | os.W_OK) == False:
 
 if os_type == "win":
     path_delimeter = "\\"
+if remote_os_type == "win":
+    remote_path_delimeter = "\\"
 
 HOST = None               # Symbolic name meaning all available interfaces
 PORT = 50007              # Arbitrary non-privileged port
@@ -86,7 +90,7 @@ print ""
 print "Checking file for transfering..."
 need_files = []
 for path in nodes.keys():
-    filename = path.split(path_delimeter)[-1]
+    filename = path.split(remote_path_delimeter)[-1]
     file_path = save_path + path_delimeter + filename
     
     # We need file, If we don't have.
@@ -116,17 +120,17 @@ if need_files:
 # Now, Transfer Request about files
 for path in need_files:
     filesize = nodes[path][0]
-    filename = path.split(path_delimeter)[-1]
+    filename = path.split(remote_path_delimeter)[-1]
     local_path = save_path + path_delimeter + filename
     md5sum = nodes[path][2]
-    f = open(local_path, "w")
+    f = open(local_path, "wb")
     
     conn.send("READY:" + path)
     
     print "%s Transfer Start." % local_path
     recv_num = 0
     while True:
-        data = conn.recv(1024*8)
+        data = conn.recv(1024)
         recv_num += len(data)
         f.write(data)
         if recv_num == filesize:
@@ -135,7 +139,7 @@ for path in need_files:
     
     if md5sum != makemd5sum(local_path):
         print "%s transfer failed, md5 checksum missmatch." % local_path
-        os.unlink(local_path)
+        #os.unlink(local_path)
         continue
     
     print "%s Transfer Done. OK" % local_path
