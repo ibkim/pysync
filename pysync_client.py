@@ -42,7 +42,7 @@ for path in files:
     
 node_pickle = pickle.dumps(nodes)
 
-HOST = 'localhost'    # The remote host
+HOST = server    # The remote host
 PORT = 50007              # The same port as used by the server
 s = None
 for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
