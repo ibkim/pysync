@@ -19,10 +19,9 @@ def makemd5sum(path):
 config = ConfigParser.ConfigParser()
 config.readfp(open("pysync.cfg"))
 
-server = config.get("global", "server")
-dirs = config.get("directory", "dirs").splitlines()
-exts = config.get("file filter", "extensions").split()
-
+server = config.get("client", "server")
+dirs = config.get("client", "dirs").splitlines()
+exts = config.get("client", "extensions").split()
 
 # Gethering files
 files = []
