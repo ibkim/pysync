@@ -11,7 +11,7 @@ def makemd5sum(path):
     f = open(path,'rb')
     for chunk in iter(lambda: f.read(128*md5.block_size), b''): 
         md5.update(chunk)
-    
+
     f.close()
     return md5.hexdigest()
 
@@ -22,6 +22,10 @@ config.readfp(open("pysync.cfg"))
 save_path = config.get("server", "dir")
 os_type = config.get("server", "os")
 path_delimeter = "/"
+
+mkdir_cmd = "mkdir -p "
+if os_type == "win":
+    mkdir_cmd = "mkdir "
 
 if os.access(save_path, os.F_OK | os.W_OK) == False:
     print "Make Download directory. %s" % save_path
