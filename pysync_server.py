@@ -9,7 +9,7 @@ from cStringIO import StringIO
 def makemd5sum(path):
     md5 = hashlib.md5()
     f = open(path,'rb')
-    for chunk in iter(lambda: f.read(128*md5.block_size), b''): 
+    for chunk in iter(lambda: f.read(128*md5.block_size), b''):
         md5.update(chunk)
 
     f.close()
@@ -20,6 +20,7 @@ config = ConfigParser.ConfigParser()
 config.readfp(open("pysync.cfg"))
 
 save_path = config.get("server", "dir")
+peer_port = config.get("server", "peer_port")
 os_type = config.get("server", "os")
 remote_os_type = config.get("client", "os")
 path_delimeter = "/"
@@ -39,7 +40,7 @@ if remote_os_type == "win":
     remote_path_delimeter = "\\"
 
 HOST = None               # Symbolic name meaning all available interfaces
-PORT = 50007              # Arbitrary non-privileged port
+PORT = Int(peer_port)              # Arbitrary non-privileged port
 s = None
 for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC,
                               socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
@@ -69,7 +70,7 @@ if not data:
     print "Client has abnormal message."
     conn.close()
     exit(1)
-    
+
 msg = str(data)
 if msg.split(':')[0] != "HELLO":
     print "Client has abnormal message."
@@ -92,7 +93,7 @@ need_files = []
 for path in nodes.keys():
     filename = path.split(remote_path_delimeter)[-1]
     file_path = save_path + path_delimeter + filename
-    
+
     # We need file, If we don't have.
     if os.access(file_path, os.F_OK) == False:
         print "Need(New): %s" % path
@@ -110,7 +111,7 @@ for path in nodes.keys():
             need_files.append(path)
         else:
             print "Ignore: %s" % path
-            
+
 print "Checking Done."
 
 print ""
@@ -124,9 +125,9 @@ for path in need_files:
     local_path = save_path + path_delimeter + filename
     md5sum = nodes[path][2]
     f = open(local_path, "wb")
-    
+
     conn.send("READY:" + path)
-    
+
     print "%s Transfer Start." % local_path
     recv_num = 0
     while True:
@@ -136,12 +137,12 @@ for path in need_files:
         if recv_num == filesize:
             break
     f.close()
-    
+
     if md5sum != makemd5sum(local_path):
         print "%s transfer failed, md5 checksum missmatch." % local_path
-        #os.unlink(local_path)
+        os.unlink(local_path)
         continue
-    
+
     print "%s Transfer Done. OK" % local_path
 
 print "Synchronization Complete."
