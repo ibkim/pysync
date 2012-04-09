@@ -9,9 +9,9 @@ from cStringIO import StringIO
 def makemd5sum(path):
     md5 = hashlib.md5()
     f = open(path,'rb')
-    for chunk in iter(lambda: f.read(128*md5.block_size), b''): 
+    for chunk in iter(lambda: f.read(128*md5.block_size), b''):
         md5.update(chunk)
-    
+
     f.close()
     return md5.hexdigest()
 
@@ -20,7 +20,9 @@ config = ConfigParser.ConfigParser()
 config.readfp(open("pysync.cfg"))
 
 server = config.get("client", "server")
+port = config.get("client", "peer_port")
 dirs = config.get("client", "dirs").splitlines()
+ignore_files = config.get("client", "ignores").splitlines()
 exts = config.get("client", "extensions").split()
 
 # Gethering files
@@ -35,15 +37,18 @@ for path in dirs:
 # Make nodes dictionaries
 nodes = {}
 for path in files:
-    filesize = os.stat(path).st_size
-    mtime = os.stat(path).st_mtime
-    sum = makemd5sum(path)
-    nodes[path] = [filesize, mtime, sum]
-    
+    try:
+        index = ignore_files.index(path)
+    except:
+        filesize = os.stat(path).st_size
+        mtime = os.stat(path).st_mtime
+        sum = makemd5sum(path)
+        nodes[path] = [filesize, mtime, sum]
+
 node_pickle = pickle.dumps(nodes)
 
 HOST = server    # The remote host
-PORT = 50007              # The same port as used by the server
+PORT = int(port)              # The same port as used by the server
 s = None
 for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
     af, socktype, proto, canonname, sa = res
@@ -81,14 +86,14 @@ while True:
     if msg == "DONE":
         print "Recv DONE msg from server. Quit Transfer."
         break
-    
+
     file = str(data).split(':')[1]
-    
+
     if msg == "READY" and file == "":
         print "Server has abnormal message."
         s.close()
         exit(1)
-    
+
     print "Request file %s" % file
     f = open(file, "r")
     while True:
@@ -97,7 +102,7 @@ while True:
             s.send(data)
         else:
             break
-    
+
     print "Sended %s" % file
 
 s.close()
